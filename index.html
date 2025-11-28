@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QicX Game</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .header {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .level-badge {
+      width: 2.5rem;
+      height: 2.5rem;
+      background: black;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.125rem;
+    }
+
+    .user-info {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .user-name {
+      font-size: 0.875rem;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .coins-display {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .coins-amount {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .coins-label {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .main-content {
+      padding: 1rem;
+      padding-bottom: 6rem;
+    }
+
+    .energy-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .energy-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+
+    .energy-bar {
+      width: 100%;
+      height: 0.75rem;
+      background: #e5e7eb;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .energy-fill {
+      height: 100%;
+      background: #111827;
+      transition: width 0.3s;
+    }
+
+    .tap-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 24rem;
+      position: relative;
+    }
+
+    .tap-button {
+      width: 16rem;
+      height: 16rem;
+      background: white;
+      border: 4px solid #111827;
+      border-radius: 50%;
+      font-size: 3.75rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.1s;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    .tap-button:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .tap-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .tap-button:hover:not(:disabled) {
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+    }
+
+    .click-effect {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #111827;
+      pointer-events: none;
+      animation: ping 1s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    @keyframes ping {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(2) translateY(-50px);
+      }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      text-align: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+
+    .upgrade-section {
+      display: none;
+    }
+
+    .upgrade-section.active {
+      display: block;
+    }
+
+    .game-section {
+      display: none;
+    }
+
+    .game-section.active {
+      display: block;
+    }
+
+    .upgrade-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      color: #111827;
+    }
+
+    .upgrade-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .upgrade-icon {
+      width: 3rem;
+      height: 3rem;
+      background: #111827;
+      color: white;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .upgrade-info {
+      flex: 1;
+    }
+
+    .upgrade-name {
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .upgrade-desc {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .upgrade-level {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+
+    .upgrade-button {
+      background: #111827;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: background 0.2s;
+    }
+
+    .upgrade-button:hover:not(:disabled) {
+      background: #1f2937;
+    }
+
+    .upgrade-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      padding: 0.75rem;
+      box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .nav-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: #6b7280;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .nav-button.active {
+      color: #111827;
+      background: #f3f4f6;
+    }
+
+    .nav-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .nav-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="level-badge" id="levelBadge">1</div>
+      <div>
+        <div class="user-info">Seviye <span id="levelText">1</span></div>
+        <div class="user-name" id="userName">Oyuncu</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="coins-display">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M12 6v12M9 9h6M9 15h6" stroke-width="2"/>
+        </svg>
+        <span class="coins-amount" id="coinsAmount">0</span>
+      </div>
+      <div class="coins-label">Toplam Coin</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Game Section -->
+    <div class="game-section active" id="gameSection">
+      <div class="energy-card">
+        <div class="energy-header">
+          <div>⚡ Enerji</div>
+          <div><span id="energyCurrent">1000</span> / <span id="energyMax">1000</span></div>
+        </div>
+        <div class="energy-bar">
+          <div class="energy-fill" id="energyFill" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <div class="tap-area">
+        <button class="tap-button" id="tapButton">QicX</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">+<span id="coinsPerTap">1</span></div>
+          <div class="stat-label">Tıklama Başı</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">+<span id="energyRegen">1</span>/s</div>
+          <div class="stat-label">Enerji Yenileme</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="currentLevel">1</div>
+          <div class="stat-label">Seviye</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upgrade Section -->
+    <div class="upgrade-section" id="upgradeSection">
+      <h2 class="upgrade-title">Yükseltmeler</h2>
+      
+      <div class="upgrade-card">
+        <div class="upgrade-icon">💰</div>
+        <div class="upgrade-info">
+          <div class="upgrade-name">Tıklama Gücü</div>
+          <div class="upgrade-desc">Her tıklamada daha fazla coin kazan</div>
+          <div class="upgrade-level">Seviye: <span id="tapLevel">1</span></div>
+        </div>
+        <button class="upgrade-button" id="upgradeTap">
+          💰 <span id="tapCost">100</span>
+        </button>
+      </div>
+
+      <div class="upgrade-card">
+        <div class="upgrade-icon">⚡</div>
+        <div class="upgrade-info">
+          <div class="upgrade-name">Maksimum Enerji</div>
+          <div class="upgrade-desc">Enerji kapasiteni artır</div>
+          <div class="upgrade-level">Seviye: <span id="energyLevel">1</span></div>
+        </div>
+        <button class="upgrade-button" id="upgradeEnergy">
+          💰 <span id="energyCost">200</span>
+        </button>
+      </div>
+
+      <div class="upgrade-card">
+        <div class="upgrade-icon">📈</div>
+        <div class="upgrade-info">
+          <div class="upgrade-name">Enerji Yenileme</div>
+          <div class="upgrade-desc">Enerji yenileme hızını artır</div>
+          <div class="upgrade-level">Seviye: <span id="regenLevel">1</span></div>
+        </div>
+        <button class="upgrade-button" id="upgradeRegen">
+          💰 <span id="regenCost">300</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <button class="nav-button active" id="navGame">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke-width="2"/>
+        <path d="M12 6v12M9 9h6M9 15h6" stroke-width="2"/>
+      </svg>
+      <span class="nav-label">Oyun</span>
+    </button>
+    <button class="nav-button" id="navUpgrade">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="nav-label">Yükseltme</span>
+    </button>
+  </div>
+
+  <script>
+    // Game state
+    let gameState = {
+      coins: 0,
+      energy: 1000,
+      maxEnergy: 1000,
+      coinsPerTap: 1,
+      energyRegenRate: 1,
+      level: 1,
+      dailyStreak: 1,
+      telegramUser: null
+    };
+
+    // Telegram WebApp entegrasyonu
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        gameState.telegramUser = {
+          id: user.id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          username: user.username
+        };
+        
+        document.getElementById('userName').textContent = user.first_name || 'Oyuncu';
+        loadUserData(user.id);
+      }
+
+      tg.setHeaderColor('#ffffff');
+      tg.setBackgroundColor('#f9fafb');
+    }
+
+    // Kullanıcı verilerini yükle
+    async function loadUserData(userId) {
+      try {
+        const response = await fetch(`https://your-backend-url.com/api/user/${userId}`);
+        const data = await response.json();
+        
+        if (data) {
+          gameState.coins = data.coins || 0;
+          gameState.energy = data.energy || 1000;
+          gameState.coinsPerTap = data.coinsPerTap || 1;
+          gameState.maxEnergy = data.maxEnergy || 1000;
+          gameState.energyRegenRate = data.energyRegenRate || 1;
+          gameState.dailyStreak = data.dailyStreak || 1;
+          updateUI();
+        }
+      } catch (error) {
+        console.error('Veri yüklenemedi:', error);
+      }
+    }
+
+    // Kullanıcı verilerini kaydet
+    async function saveUserData() {
+      if (!gameState.telegramUser) return;
+      
+      try {
+        await fetch(`https://your-backend-url.com/api/user/${gameState.telegramUser.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gameState)
+        });
+      } catch (error) {
+        console.error('Veri kaydedilemedi:', error);
+      }
+    }
+
+    // UI güncelleme
+    function updateUI() {
+      document.getElementById('coinsAmount').textContent = gameState.coins.toLocaleString();
+      document.getElementById('energyCurrent').textContent = gameState.energy;
+      document.getElementById('energyMax').textContent = gameState.maxEnergy;
+      document.getElementById('energyFill').style.width = (gameState.energy / gameState.maxEnergy * 100) + '%';
+      document.getElementById('coinsPerTap').textContent = gameState.coinsPerTap;
+      document.getElementById('energyRegen').textContent = gameState.energyRegenRate;
+      
+      gameState.level = Math.floor(gameState.coins / 1000) + 1;
+      document.getElementById('levelBadge').textContent = gameState.level;
+      document.getElementById('levelText').textContent = gameState.level;
+      document.getElementById('currentLevel').textContent = gameState.level;
+
+      // Yükseltme UI
+      document.getElementById('tapLevel').textContent = gameState.coinsPerTap;
+      document.getElementById('energyLevel').textContent = gameState.maxEnergy / 1000;
+      document.getElementById('regenLevel').textContent = gameState.energyRegenRate;
+
+      const tapCost = Math.floor(100 * Math.pow(1.5, gameState.coinsPerTap));
+      const energyCost = Math.floor(200 * Math.pow(1.5, gameState.maxEnergy / 1000));
+      const regenCost = Math.floor(300 * Math.pow(1.5, gameState.energyRegenRate));
+
+      document.getElementById('tapCost').textContent = tapCost;
+      document.getElementById('energyCost').textContent = energyCost;
+      document.getElementById('regenCost').textContent = regenCost;
+
+      document.getElementById('upgradeTap').disabled = gameState.coins < tapCost;
+      document.getElementById('upgradeEnergy').disabled = gameState.coins < energyCost;
+      document.getElementById('upgradeRegen').disabled = gameState.coins < regenCost;
+      document.getElementById('tapButton').disabled = gameState.energy < 1;
+    }
+
+    // Tıklama
+    document.getElementById('tapButton').addEventListener('click', function(e) {
+      if (gameState.energy < 1) return;
+
+      gameState.coins += gameState.coinsPerTap;
+      gameState.energy -= 1;
+
+      // Haptic feedback
+      if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+      }
+
+      // Görsel efekt
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const effect = document.createElement('div');
+      effect.className = 'click-effect';
+      effect.textContent = '+' + gameState.coinsPerTap;
+      effect.style.left = x + 'px';
+      effect.style.top = y + 'px';
+      this.appendChild(effect);
+      
+      setTimeout(() => effect.remove(), 1000);
+      
+      updateUI();
+    });
+
+    // Yükseltmeler
+    document.getElementById('upgradeTap').addEventListener('click', function() {
+      const cost = Math.floor(100 * Math.pow(1.5, gameState.coinsPerTap));
+      if (gameState.coins >= cost) {
+        gameState.coins -= cost;
+        gameState.coinsPerTap += 1;
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+        updateUI();
+      }
+    });
+
+    document.getElementById('upgradeEnergy').addEventListener('click', function() {
+      const cost = Math.floor(200 * Math.pow(1.5, gameState.maxEnergy / 1000));
+      if (gameState.coins >= cost) {
+        gameState.coins -= cost;
+        gameState.maxEnergy += 1000;
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+        updateUI();
+      }
+    });
+
+    document.getElementById('upgradeRegen').addEventListener('click', function() {
+      const cost = Math.floor(300 * Math.pow(1.5, gameState.energyRegenRate));
+      if (gameState.coins >= cost) {
+        gameState.coins -= cost;
+        gameState.energyRegenRate += 1;
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+        updateUI();
+      }
+    });
+
+    // Navigasyon
+    document.getElementById('navGame').addEventListener('click', function() {
+      document.getElementById('gameSection').classList.add('active');
+      document.getElementById('upgradeSection').classList.remove('active');
+      this.classList.add('active');
+      document.getElementById('navUpgrade').classList.remove('active');
+    });
+
+    document.getElementById('navUpgrade').addEventListener('click', function() {
+      document.getElementById('upgradeSection').classList.add('active');
+      document.getElementById('gameSection').classList.remove('active');
+      this.classList.add('active');
+      document.getElementById('navGame').classList.remove('active');
+    });
+
+    // Enerji yenileme
+    setInterval(() => {
+      if (gameState.energy < gameState.maxEnergy) {
+        gameState.energy = Math.min(gameState.energy + gameState.energyRegenRate, gameState.maxEnergy);
+        updateUI();
+      }
+    }, 1000);
+
+    // Otomatik kayıt
+    setInterval(() => {
+      saveUserData();
+    }, 10000);
+
+    // İlk yükleme
+    updateUI();
+  </script>
+</body>
+  </html>
